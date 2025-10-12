@@ -41,7 +41,7 @@ void näita_sõnu(std::vector<std::string> sõnad) {
     std::cout << sõnad.size() << std::endl;
 }
 
-void vilkumine(float &opacity, std::string choice, float multiplier, float a_m) {
+void vilkumine(float &opacity, std::string choice, float multiplier, float &a_m) {
     if (choice == "up" && opacity < 0.95f)
         opacity += 0.01f * multiplier * a_m;
     else if (opacity < 0.95f) {
@@ -335,9 +335,9 @@ void Render(SDL_Renderer* renderer, SDL_Window* window, TTF_Font* font, TextCach
 	
 	renderText(renderer, getFont("Gentium-R.ttf", 100), kombinatsiooni_tekst, 230, 160, {255, 255, 255, 255}, &textCache);
 	renderText(renderer, getFont("Gentium-R.ttf", 100), sisendi_tekst, 230-teksti_nihe, 300, {255, 255, 0, 255}, &textCache);
-	renderText(renderer, getFont("Gentium-R.ttf", 50), elu_tekst, 20, 0, {255, 0, 0, 50}, &textCache);
-	renderText(renderer, getFont("Gentium-R.ttf", 50), aeg_tekst, 305, 420, {255, 255, 255, 50}, &textCache);
-	renderText(renderer, getFont("Gentium-R.ttf", 50), skoor_tekst, 450, 0, {255, 255, 255, 50}, &textCache);
+	renderText(renderer, getFont("Gentium-R.ttf", 50), elu_tekst, 20, 0, {255, 0, 0, 100}, &textCache);
+	renderText(renderer, getFont("Gentium-R.ttf", 50), aeg_tekst, 305, 420, {255, 255, 255, 100}, &textCache);
+	renderText(renderer, getFont("Gentium-R.ttf", 50), skoor_tekst, 450, 0, {255, 255, 255, 100}, &textCache);
 	
 	
 	renderSquare(renderer, 0, 0, 700, 255, 0, 0, whole_scene_opacity);
@@ -420,10 +420,13 @@ int main() {
 	
 	while (running) {
 		
+		SDL_Delay(1);
+		
 		// Time
 		Uint64 currentTime = SDL_GetTicks();
 		deltaTime = (currentTime - lastTime) / 1000.0f;
 		lastTime = currentTime;
+		std::cout << deltaTime << std::endl;
 		float a_m = deltaTime * 62.5;
 		
 		
