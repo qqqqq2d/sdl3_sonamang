@@ -433,7 +433,7 @@ int main() {
 		//std::cout << whole_scene_opacity << std::endl;
 		//whole_scene_opacity += 0.01f * a_m;
 		
-		aeg = aeg + 0.0166 * a_m;
+		aeg = aeg + 0.0156 * a_m;
     	vastupidine_aeg = (sekundite_arv+1) - aeg;
     	aeg_int = static_cast<int>(vastupidine_aeg);
     	aeg_tekst = std::to_string(aeg_int);
