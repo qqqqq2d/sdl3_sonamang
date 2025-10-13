@@ -52,7 +52,7 @@ void vilkumine(float &opacity, std::string choice, float multiplier, float &a_m)
 void tervik_vale_vilkumine(bool &vale_vastus_vilkumine, bool &opacity_up, float &whole_scene_opacity, float &a_m) {
 	if (vale_vastus_vilkumine) {
 		if (opacity_up)
-            vilkumine(whole_scene_opacity, "up", 20, a_m);
+            vilkumine(whole_scene_opacity, "up", 5, a_m);
         if (whole_scene_opacity >= 0.75f) {
         	opacity_up = false;
         }
@@ -90,8 +90,9 @@ void vale_vastus_muutujad(std::string &kombinatsiooni_tekst, std::vector<std::st
 	kombinatsiooni_tekst = sõnavahetus();
 	kombinatsiooni_sõnad.clear();
 	sõnad_push_back_done = false;
-	if (elud != 0)
+	if (elud != 0) {
 		vale_vastus_vilkumine = true;
+	}
 	aeg = 0;	
 }
 
@@ -429,8 +430,8 @@ int main() {
 		
 		float a_m = deltaTime * 62.5;
 		
-		std::cout << whole_scene_opacity << std::endl;
-		whole_scene_opacity += 0.01f * a_m;
+		//std::cout << whole_scene_opacity << std::endl;
+		//whole_scene_opacity += 0.01f * a_m;
 		
 		aeg = aeg + 0.0166 * a_m;
     	vastupidine_aeg = (sekundite_arv+1) - aeg;
