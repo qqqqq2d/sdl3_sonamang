@@ -426,9 +426,11 @@ int main() {
 		Uint64 currentTime = SDL_GetTicks();
 		deltaTime = (currentTime - lastTime) / 1000.0f;
 		lastTime = currentTime;
-		std::cout << deltaTime << std::endl;
+		
 		float a_m = deltaTime * 62.5;
 		
+		std::cout << whole_scene_opacity << std::endl;
+		whole_scene_opacity += 0.01f * a_m;
 		
 		aeg = aeg + 0.0166 * a_m;
     	vastupidine_aeg = (sekundite_arv+1) - aeg;
