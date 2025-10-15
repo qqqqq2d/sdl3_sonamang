@@ -397,32 +397,63 @@ int main() {
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
     scale.update(windowWidth, windowHeight);
     
-	SDL_Event event;	
+	SDL_Event event;		
 	
-	int elud = 3;
-    bool vastus = true;
-    std::vector<std::string> kombinatsiooni_sõnad;
-    std::string vaadeldav_sõna;
+   
     while (std::getline(sonade_list, sõna)) {
     	sõnad.push_back(sõna);
     }
+    std::vector<std::string> kombinatsiooni_sõnad;
+    std::string vaadeldav_sõna;
+    
+    int elud = 3;
+    bool vastus = true;
     bool sõnad_push_back_done = false;
-    
     int skoor = 0;
-    
     float aeg = 0;
     float vastupidine_aeg = 0;
     int aeg_int;
     int sekundite_arv = 10;
-	
 	bool opacity_up = true;
     bool vale_vastus_vilkumine = false;
-	
+    
 	bool running = true;
 	
 	Uint64 lastTime = SDL_GetTicks();
 	float deltaTime = 0.0f;
 	bool mäng_läbi = false;
+	
+	auto uus_mäng = [&]() {
+		elud = 3;
+		vastus = true;
+		sõnad_push_back_done = false;
+		skoor = 0;
+		aeg = 0;
+		vastupidine_aeg = 0;
+		//aeg_int = 0;
+		sekundite_arv = 10;
+		opacity_up = true;
+		vale_vastus_vilkumine = false;
+		mäng_läbi = false;
+		
+		kombinatsiooni_tekst = sõnavahetus();
+		sisendi_tekst = "";
+		elu_tekst = "<3";
+		aeg_tekst = "";
+		skoor_tekst = "Skoor: 0";
+		skoor_lõpp_tekst = "";
+		
+		//sõnad.clear();
+		/*
+		while (std::getline(sonade_list, sõna)) {
+    		sõnad.push_back(sõna);
+    	}
+    	*/
+    	kombinatsiooni_sõnad.clear();
+    	
+    	whole_scene_opacity = 0.0f;
+		
+	};
 	
 	while (running) {
 		
@@ -442,10 +473,16 @@ int main() {
 		
 		elu_tekst = std::to_string(elud);
 		
+		//std::cout << whole_scene_opacity << std::endl;
+		
 		while(SDL_PollEvent(&event)) {
 					
 			if (event.type == SDL_EVENT_QUIT) {
 				running = false;
+			}
+			if (event.key.key == SDLK_RETURN && mäng_läbi && whole_scene_opacity > 0.90f) {
+				uus_mäng();
+				std::cout << "uus mäng" << std::endl;
 			}
 			
 			// Handle window resize
@@ -476,7 +513,7 @@ int main() {
                 }
             }
             sõnad_push_back_done = true;
-            näita_sõnu(kombinatsiooni_sõnad);
+            //näita_sõnu(kombinatsiooni_sõnad);
         }
 		
 		if (text_entered) {
@@ -505,6 +542,8 @@ int main() {
             skoor_lõpp_tekst = "Sinu skoor: " + std::to_string(skoor);
             mäng_läbi = true;
         }
+        
+        
 		
 		tervik_vale_vilkumine(vale_vastus_vilkumine, opacity_up, whole_scene_opacity, a_m);
 		
