@@ -6,16 +6,15 @@
 #include <vector>
 #include <fstream>
 #include <random>
-#include <locale>
-#include <codecvt>
 #include <algorithm>
 #include <map>
 
 std::string sõna;
-std::ifstream sonade_list("sonad3.txt");
+std::ifstream sonade_list("../sonad3.txt");
+
+constexpr auto fontname = "../Gentium-R.ttf";
 
 std::string kombinatsioon;
-std::ifstream kombinatsioonide_list("kombinatsioonid3.txt");
 
 std::vector<std::string> kombinatsioonid{};
 std::vector<std::string> sõnad{};
@@ -49,6 +48,12 @@ struct ScaleInfo {
 };
 
 std::string sõnavahetus() {
+	static constexpr auto fname = "../kombinatsioonid3.txt";
+	std::ifstream kombinatsioonide_list(fname);
+	if (kombinatsioonide_list.fail()) {
+		std::cout << "Faili ei leitud:" << fname << std::endl;
+		exit(1);
+	}
     while (std::getline(kombinatsioonide_list, kombinatsioon)) {
         kombinatsioonid.push_back(kombinatsioon);
     }
@@ -58,14 +63,14 @@ std::string sõnavahetus() {
     return kombinatsioonid[suvaline_kombinatsioon];
 }
 
-void näita_sõnu(std::vector<std::string> sõnad) {
+void näita_sõnu(const std::vector<std::string>& sõnad) {
     for (auto i : sõnad) {
         std::cout << i << " ";
     }
     std::cout << sõnad.size() << std::endl;
 }
 
-void vilkumine(float &opacity, std::string choice, float multiplier, float &a_m) {
+void vilkumine(float &opacity, const std::string& choice, float multiplier, float &a_m) {
     if (choice == "up" && opacity < 0.95f)
         opacity += 0.01f * multiplier * a_m;
     else if (opacity < 0.95f) {
@@ -73,7 +78,7 @@ void vilkumine(float &opacity, std::string choice, float multiplier, float &a_m)
     }
 }
 
-void tervik_vale_vilkumine(bool &vale_vastus_vilkumine, bool &opacity_up, float &whole_scene_opacity, float &a_m) {
+void Tervik_vale_vilkumine(bool &vale_vastus_vilkumine, bool &opacity_up, float &whole_scene_opacity, float &a_m) {
 	if (vale_vastus_vilkumine) {
 		if (opacity_up)
             vilkumine(whole_scene_opacity, "up", 5, a_m);
@@ -103,7 +108,7 @@ bool lastCharIsMultibyte(const std::string& s) {
     return charLen > 1;
 }
 
-void vale_vastus_muutujad(std::string &kombinatsiooni_tekst, std::vector<std::string> &kombinatsiooni_sõnad, bool &sõnad_push_back_done, float &aeg, int &elud, bool &vale_vastus_vilkumine) {
+void Vale_vastus_muutujad(std::string &kombinatsiooni_tekst, std::vector<std::string> &kombinatsiooni_sõnad, bool &sõnad_push_back_done, float &aeg, int &elud, bool &vale_vastus_vilkumine) {
 		
 	elud--;
 	kombinatsiooni_tekst = sõnavahetus();
@@ -115,11 +120,63 @@ void vale_vastus_muutujad(std::string &kombinatsiooni_tekst, std::vector<std::st
 	aeg = 0;	
 }
 
-void vale_vastus_muutujad(std::string &kombinatsiooni_tekst, std::vector<std::string> &kombinatsiooni_sõnad, bool &sõnad_push_back_done, float &aeg) {	
+void Vale_vastus_muutujad(std::string &kombinatsiooni_tekst, std::vector<std::string> &kombinatsiooni_sõnad, bool &sõnad_push_back_done, float &aeg) {	
 	kombinatsiooni_tekst = sõnavahetus();
 	kombinatsiooni_sõnad.clear();
 	sõnad_push_back_done = false;
 	aeg = 0;	
+}
+
+void Aja_kontroll(std::string &kombinatsiooni_tekst, std::vector<std::string> &kombinatsiooni_sõnad, bool &sõnad_push_back_done, float &aeg, int &elud, bool &vale_vastus_vilkumine, int &aeg_int, std::string &sisendi_tekst) {
+	if (aeg_int <= 0) {
+		Vale_vastus_muutujad(kombinatsiooni_tekst, kombinatsiooni_sõnad, sõnad_push_back_done, aeg, elud, vale_vastus_vilkumine);
+		sisendi_tekst = "";
+	}
+}
+
+void Kombinatsiooni_sobivus(std::string &kombinatsiooni_tekst, bool &sõnad_push_back_done, std::vector<std::string> &sõnad, std::vector<std::string> &kombinatsiooni_sõnad) {
+
+	if (!sõnad_push_back_done) {
+		for (auto i : sõnad) {
+		    size_t pos = i.find(kombinatsiooni_tekst);
+		    if (pos != std::string::npos) {
+		    	kombinatsiooni_sõnad.push_back(i);
+		    }
+		}
+		sõnad_push_back_done = true;
+		//näita_sõnu(kombinatsiooni_sõnad);
+	}
+
+}
+
+void Sõna_kontroll(bool &text_entered, bool &vastus, std::vector<std::string> &kombinatsiooni_sõnad, std::string &sisendi_tekst, std::string &kombinatsiooni_tekst, bool &sõnad_push_back_done, float &aeg, int &skoor, std::string &skoor_tekst, bool &vale_vastus_vilkumine, int &elud, float &whole_scene_opacity, std::string &skoor_lõpp_tekst, bool &mäng_läbi, float &a_m) {
+    if (text_entered) {
+        text_entered = false;
+        vastus = false;
+        for (auto i : kombinatsiooni_sõnad) {
+            if (i == sisendi_tekst) {
+                sõnad.erase(std::remove(sõnad.begin(), sõnad.end(), sisendi_tekst), sõnad.end());
+                Vale_vastus_muutujad(kombinatsiooni_tekst, kombinatsiooni_sõnad, sõnad_push_back_done, aeg);        
+                vastus = true;
+                skoor++;
+                skoor_tekst = "Skoor: " + std::to_string(skoor);
+				
+                break;
+            }
+            
+        }
+        if (sisendi_tekst != "" && !vastus) {
+            Vale_vastus_muutujad(kombinatsiooni_tekst, kombinatsiooni_sõnad, sõnad_push_back_done, aeg, elud, vale_vastus_vilkumine);
+        }
+        sisendi_tekst = "";
+    }
+    
+    if (elud == 0) {
+        vilkumine(whole_scene_opacity, "up", 2, a_m);
+        skoor_lõpp_tekst = "Sinu skoor: " + std::to_string(skoor);
+        mäng_läbi = true;
+    }
+    
 }
 
 void renderSquare(SDL_Renderer* renderer, float x, float y, float size, 
@@ -196,7 +253,6 @@ bool renderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
     if (!useCache) {
         SDL_DestroyTexture(textTexture);
     }
-    
     return true;
 }
 
@@ -221,6 +277,7 @@ void clearFontCache() {
     fontCache.clear();
 }
 
+    
 bool getTextSize(TTF_Font* font, const std::string& text, float& width, float& height) {
     int w, h;
     if (!TTF_GetStringSize(font, text.c_str(), 0, &w, &h)) {
@@ -240,8 +297,9 @@ std::string skoor_tekst = "Skoor: 0";
 std::string skoor_lõpp_tekst = "";
 
 bool text_entered = false;
+bool stardi_ekraan = true;
 
-void processInput(SDL_Event event, bool& running, bool mäng_läbi) {
+void processInput(SDL_Event event, bool& running, bool &mäng_läbi) {
 	if (event.type == SDL_EVENT_KEY_DOWN) {
 	
         if (event.key.key == SDLK_ESCAPE) {
@@ -259,6 +317,10 @@ void processInput(SDL_Event event, bool& running, bool mäng_läbi) {
 		}
 		if (event.key.key == SDLK_RETURN) {
 			text_entered = true;
+			if (stardi_ekraan) {
+				mäng_läbi = false;
+				stardi_ekraan = false;
+			}
 		}		
 	}
     
@@ -321,28 +383,34 @@ void processInput(SDL_Event event, bool& running, bool mäng_läbi) {
 int teksti_nihe = 0;
 float whole_scene_opacity = 0;
 
-void Render(SDL_Renderer* renderer, SDL_Window* window, TTF_Font* font, TextCache& textCache, const ScaleInfo& scale) {
+void Render(SDL_Renderer* renderer, SDL_Window* window, TTF_Font* font, TextCache& textCache, const ScaleInfo& scale, bool &mäng_läbi) {
 
 	SDL_SetRenderDrawColor(renderer, 0, 0, 55, 255);
-	SDL_RenderClear(renderer);	
-	
+	SDL_RenderClear(renderer);
+
 	// Scale all positions and font sizes
-	renderText(renderer, getFont("Gentium-R.ttf", scale.fontSize(100)), kombinatsiooni_tekst, 
+	renderText(renderer, getFont(fontname, scale.fontSize(100)), kombinatsiooni_tekst,
 	           scale.x(230), scale.y(160), {255, 255, 255, 255}, &textCache);
-	renderText(renderer, getFont("Gentium-R.ttf", scale.fontSize(100)), sisendi_tekst, 
+	renderText(renderer, getFont(fontname, scale.fontSize(100)), sisendi_tekst,
 	           scale.x(230-teksti_nihe), scale.y(300), {255, 255, 0, 255}, &textCache);
-	renderText(renderer, getFont("Gentium-R.ttf", scale.fontSize(50)), elu_tekst, 
-	           scale.x(20), scale.y(0), {255, 0, 0, 100}, &textCache);
-	renderText(renderer, getFont("Gentium-R.ttf", scale.fontSize(50)), aeg_tekst, 
+	renderText(renderer, getFont(fontname, scale.fontSize(50)), elu_tekst,
+	           scale.x(15), scale.y(0), {255, 0, 0, 100}, &textCache);
+	renderText(renderer, getFont(fontname, scale.fontSize(50)), aeg_tekst,
 	           scale.x(305), scale.y(420), {255, 255, 255, 100}, &textCache);
-	renderText(renderer, getFont("Gentium-R.ttf", scale.fontSize(50)), skoor_tekst, 
+	renderText(renderer, getFont(fontname, scale.fontSize(50)), skoor_tekst,
 	           scale.x(450), scale.y(0), {255, 255, 255, 100}, &textCache);
 	
 	// Full screen overlay scales with window
-	renderSquare(renderer, 0, 0, scale.windowWidth, 255, 0, 0, whole_scene_opacity);
-	renderText(renderer, getFont("Gentium-R.ttf", scale.fontSize(100)), skoor_lõpp_tekst, 
+	renderSquare(renderer, 0, 0, scale.windowWidth*50, 255, 0, 0, whole_scene_opacity);
+	renderText(renderer, getFont(fontname, scale.fontSize(100)), skoor_lõpp_tekst,
 	           scale.x(60), scale.y(160), {255, 255, 255, 255}, &textCache);
-	
+
+	if (stardi_ekraan && mäng_läbi) {
+		renderSquare(renderer, 0, 0, scale.windowWidth*50, 0, 0, 20, 1.0f);
+		renderText(renderer, getFont(fontname, scale.fontSize(100)), "Sõna mäng",
+			   scale.x(100), scale.y(160), {255, 255, 255, 255}, &textCache);
+	}
+
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 	SDL_RenderPresent(renderer);
 }
@@ -377,7 +445,7 @@ int main() {
     	std::cerr << "Warning: VSync not supported: " << SDL_GetError() << std::endl;
 	}
        
-    TTF_Font* font = TTF_OpenFont("Gentium-R.ttf", 100);
+    TTF_Font* font = TTF_OpenFont(fontname, 100);
     TTF_Font* font_smaller = TTF_OpenFont("Gentium-R.ttf", 50);
     
     if (!font) {
@@ -409,19 +477,34 @@ int main() {
     int elud = 3;
     bool vastus = true;
     bool sõnad_push_back_done = false;
-    int skoor = 0;
-    float aeg = 0;
-    float vastupidine_aeg = 0;
-    int aeg_int;
-    int sekundite_arv = 10;
+    int skoor = 0;    
 	bool opacity_up = true;
     bool vale_vastus_vilkumine = false;
-    
-	bool running = true;
-	
+    	
+	// Aja muutujad
+	int sekundite_arv = 10;
+	float aeg = 0;
+	float vastupidine_aeg = 0;
+	int aeg_int;
 	Uint64 lastTime = SDL_GetTicks();
 	float deltaTime = 0.0f;
-	bool mäng_läbi = false;
+	Uint64 currentTime;
+	float a_m = 0.0f;
+	
+	//bool mäng_läbi = false;
+	bool mäng_läbi = true;
+	
+	auto aja_arvestus = [&]() {
+		Uint64 currentTime = SDL_GetTicks();
+		deltaTime = (currentTime - lastTime) / 1000.0f;
+		lastTime = currentTime;
+		a_m = deltaTime * 62.5;
+		if (!mäng_läbi) {
+			aeg = aeg + 0.0156 * a_m;
+		}
+		vastupidine_aeg = (sekundite_arv+1) - aeg;
+    	aeg_int = static_cast<int>(vastupidine_aeg);	
+	};
 	
 	auto uus_mäng = [&]() {
 		elud = 3;
@@ -429,7 +512,7 @@ int main() {
 		sõnad_push_back_done = false;
 		skoor = 0;
 		aeg = 0;
-		vastupidine_aeg = 0;
+		vastupidine_aeg = 0.0f;
 		//aeg_int = 0;
 		sekundite_arv = 10;
 		opacity_up = true;
@@ -455,26 +538,9 @@ int main() {
 		
 	};
 	
+	bool running = true;
+	
 	while (running) {
-		
-		SDL_Delay(1);
-		
-		// Time
-		Uint64 currentTime = SDL_GetTicks();
-		deltaTime = (currentTime - lastTime) / 1000.0f;
-		lastTime = currentTime;
-		
-		float a_m = deltaTime * 62.5;
-		
-		aeg = aeg + 0.0156 * a_m;
-    	vastupidine_aeg = (sekundite_arv+1) - aeg;
-    	aeg_int = static_cast<int>(vastupidine_aeg);
-    	aeg_tekst = std::to_string(aeg_int);
-		
-		elu_tekst = std::to_string(elud);
-		
-		//std::cout << whole_scene_opacity << std::endl;
-		
 		while(SDL_PollEvent(&event)) {
 					
 			if (event.type == SDL_EVENT_QUIT) {
@@ -487,66 +553,36 @@ int main() {
 			
 			// Handle window resize
 			if (event.type == SDL_EVENT_WINDOW_RESIZED || 
-			    event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-			    SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-			    scale.update(windowWidth, windowHeight);
-			    // Clear text cache on resize to regenerate with new sizes
-			    textCache.clear(renderer);
-			}
-			
-			processInput(event, running, mäng_läbi);				
-		}		
-		
+				event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+					SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+					scale.update(windowWidth, windowHeight);
+					// Clear text cache on resize to regenerate with new sizes
+					textCache.clear(renderer);
+				}
+
+			processInput(event, running, mäng_läbi);
+		}
+
 		// Mäng
-		
-		if (aeg_int <= 0) {
-			vale_vastus_muutujad(kombinatsiooni_tekst, kombinatsiooni_sõnad, sõnad_push_back_done, aeg, elud, vale_vastus_vilkumine);
-			
-			sisendi_tekst = "";
-		}
-		
-		if (!sõnad_push_back_done) {
-            for (auto i : sõnad) {
-                size_t pos = i.find(kombinatsiooni_tekst);
-                if (pos != std::string::npos) {
-                    kombinatsiooni_sõnad.push_back(i);
-                }
-            }
-            sõnad_push_back_done = true;
-            //näita_sõnu(kombinatsiooni_sõnad);
-        }
-		
-		if (text_entered) {
-			text_entered = false;
-			vastus = false;
-			for (auto i : kombinatsiooni_sõnad) {
-                if (i == sisendi_tekst) {
-                    sõnad.erase(std::remove(sõnad.begin(), sõnad.end(), sisendi_tekst), sõnad.end());
-                    vale_vastus_muutujad(kombinatsiooni_tekst, kombinatsiooni_sõnad, sõnad_push_back_done, aeg);        
-                    vastus = true;
-                    skoor++;
-                    skoor_tekst = "Skoor: " + std::to_string(skoor);
-					
-                    break;
-                }
-               
-            }
-            if (sisendi_tekst != "" && !vastus) {
-            	vale_vastus_muutujad(kombinatsiooni_tekst, kombinatsiooni_sõnad, sõnad_push_back_done, aeg, elud, vale_vastus_vilkumine);
-            }
-            sisendi_tekst = "";
-		}
-		
-		if (elud == 0) {
-            vilkumine(whole_scene_opacity, "up", 2, a_m);
-            skoor_lõpp_tekst = "Sinu skoor: " + std::to_string(skoor);
-            mäng_läbi = true;
-        }
-        
-        
-		
-		tervik_vale_vilkumine(vale_vastus_vilkumine, opacity_up, whole_scene_opacity, a_m);
-		
+
+		// Time
+
+		aja_arvestus();
+
+		Aja_kontroll(kombinatsiooni_tekst, kombinatsiooni_sõnad, sõnad_push_back_done, aeg, elud, vale_vastus_vilkumine,
+		             aeg_int, sisendi_tekst);
+
+		Kombinatsiooni_sobivus(kombinatsiooni_tekst, sõnad_push_back_done, sõnad, kombinatsiooni_sõnad);
+
+		Sõna_kontroll(text_entered, vastus, kombinatsiooni_sõnad, sisendi_tekst, kombinatsiooni_tekst,
+		              sõnad_push_back_done, aeg, skoor, skoor_tekst, vale_vastus_vilkumine, elud, whole_scene_opacity,
+		              skoor_lõpp_tekst, mäng_läbi, a_m);
+
+		Tervik_vale_vilkumine(vale_vastus_vilkumine, opacity_up, whole_scene_opacity, a_m);
+
+		aeg_tekst = std::to_string(aeg_int);
+		elu_tekst = std::to_string(elud);
+
 		// Teksti kontroll - scale the text shift threshold
 		float textWidth, textHeight;
 		TTF_Font* currentFont = getFont("Gentium-R.ttf", scale.fontSize(100));
@@ -561,7 +597,7 @@ int main() {
 		}
 		
 		// Render
-		Render(renderer, window, font, textCache, scale);
+		Render(renderer, window, font, textCache, scale, mäng_läbi);
 
 	}
 	
