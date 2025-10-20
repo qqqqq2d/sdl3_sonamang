@@ -256,13 +256,71 @@ bool renderText(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
     return true;
 }
 
+// Centered text rendering - centers horizontally on the window
+bool renderTextCentered(SDL_Renderer* renderer, TTF_Font* font, const std::string& text,
+                       float centerX, float y, SDL_Color color, TextCache* cache = nullptr) {
+    SDL_Texture* textTexture = nullptr;
+    bool useCache = (cache != nullptr);
+
+    if (useCache) {
+        std::string cacheKey = text + "_" + std::to_string(color.r) + "_" +
+                              std::to_string(color.g) + "_" + std::to_string(color.b);
+        auto it = cache->textures.find(cacheKey);
+        if (it != cache->textures.end()) {
+            textTexture = it->second;
+        } else {
+            SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), 0, color);
+
+            if (!surface) {
+                return false;
+            }
+
+            textTexture = SDL_CreateTextureFromSurface(renderer, surface);
+            SDL_DestroySurface(surface);
+
+            if (!textTexture) {
+                std::cerr << "SDL_CreateTextureFromSurface failed: " << SDL_GetError() << std::endl;
+                return false;
+            }
+            cache->textures[cacheKey] = textTexture;
+        }
+    } else {
+        SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), 0, color);
+        if (!surface) {
+            std::cerr << "TTF_RenderText_Blended failed: " << SDL_GetError() << std::endl;
+            return false;
+        }
+        textTexture = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_DestroySurface(surface);
+
+        if (!textTexture) {
+            std::cerr << "SDL_CreateTextureFromSurface failed: " << SDL_GetError() << std::endl;
+            return false;
+        }
+    }
+
+    float textWidth, textHeight;
+    SDL_GetTextureSize(textTexture, &textWidth, &textHeight);
+
+    // Center horizontally
+    float x = centerX - (textWidth / 2.0f);
+    SDL_FRect destRect = {x, y, textWidth, textHeight};
+
+    SDL_RenderTexture(renderer, textTexture, nullptr, &destRect);
+
+    if (!useCache) {
+        SDL_DestroyTexture(textTexture);
+    }
+    return true;
+}
+
 std::map<int, TTF_Font*> fontCache;
 
 TTF_Font* getFont(const std::string& fontPath, int size) {
     if (fontCache.find(size) != fontCache.end()) {
         return fontCache[size];
     }
-    
+
     TTF_Font* font = TTF_OpenFont(fontPath.c_str(), size);
     if (font) {
         fontCache[size] = font;
@@ -277,7 +335,7 @@ void clearFontCache() {
     fontCache.clear();
 }
 
-    
+
 bool getTextSize(TTF_Font* font, const std::string& text, float& width, float& height) {
     int w, h;
     if (!TTF_GetStringSize(font, text.c_str(), 0, &w, &h)) {
@@ -301,14 +359,20 @@ bool stardi_ekraan = true;
 
 void processInput(SDL_Event event, bool& running, bool &mäng_läbi) {
 	if (event.type == SDL_EVENT_KEY_DOWN) {
-	
+
         if (event.key.key == SDLK_ESCAPE) {
-            running = false;
+        	if (stardi_ekraan == false) {
+        		stardi_ekraan = true;
+        		mäng_läbi = true;
+        	}
+        	else {
+        		running = false;
+        	}
         }
-        
+
         if (event.key.key == SDLK_BACKSPACE && !sisendi_tekst.empty()) {
             int n = 1;
-        	
+
             if (!sisendi_tekst.empty()) {
             	if (lastCharIsMultibyte(sisendi_tekst))
             		n = 2;
@@ -320,16 +384,17 @@ void processInput(SDL_Event event, bool& running, bool &mäng_läbi) {
 			if (stardi_ekraan) {
 				mäng_läbi = false;
 				stardi_ekraan = false;
+
 			}
-		}		
+		}
 	}
-    
+
     else if (event.type == SDL_EVENT_TEXT_INPUT && !mäng_läbi) {
     	std::string input = event.text.text;
-    
+
 		for (size_t i = 0; i < input.length(); i++) {
 		    unsigned char c = input[i];
-		    
+
 		    if (c >= 'a' && c <= 'z') {
 		        input[i] = c - 32;
 		    }
@@ -354,11 +419,11 @@ void processInput(SDL_Event event, bool& running, bool &mäng_läbi) {
 		        }
 		    }
 		}
-		
+
 		bool only_letters = true;
 		for (size_t i = 0; i < input.length(); i++) {
 		    unsigned char c = input[i];
-		    
+
 		    if (c >= 'A' && c <= 'Z') {
 		        continue;
 		    }
@@ -373,7 +438,7 @@ void processInput(SDL_Event event, bool& running, bool &mäng_läbi) {
 		        break;
 		    }
 		}
-		
+
 		if (only_letters && !input.empty()) {
 		    sisendi_tekst += input;
 		}
@@ -388,27 +453,42 @@ void Render(SDL_Renderer* renderer, SDL_Window* window, TTF_Font* font, TextCach
 	SDL_SetRenderDrawColor(renderer, 0, 0, 55, 255);
 	SDL_RenderClear(renderer);
 
+	// Center point of window
+	float windowCenterX = scale.windowWidth / 2.0f;
+
 	// Scale all positions and font sizes
-	renderText(renderer, getFont(fontname, scale.fontSize(100)), kombinatsiooni_tekst,
-	           scale.x(230), scale.y(160), {255, 255, 255, 255}, &textCache);
-	renderText(renderer, getFont(fontname, scale.fontSize(100)), sisendi_tekst,
-	           scale.x(230-teksti_nihe), scale.y(300), {255, 255, 0, 255}, &textCache);
+	// Kombinatsioon - centered
+	renderTextCentered(renderer, getFont(fontname, scale.fontSize(100)), kombinatsiooni_tekst,
+	           windowCenterX, scale.y(160), {255, 255, 255, 255}, &textCache);
+
+	// Sisendi tekst - centered
+	renderTextCentered(renderer, getFont(fontname, scale.fontSize(100)), sisendi_tekst,
+	           windowCenterX, scale.y(300), {255, 255, 0, 255}, &textCache);
+
+	// Elu tekst - top left
 	renderText(renderer, getFont(fontname, scale.fontSize(50)), elu_tekst,
-	           scale.x(15), scale.y(0), {255, 0, 0, 100}, &textCache);
-	renderText(renderer, getFont(fontname, scale.fontSize(50)), aeg_tekst,
-	           scale.x(305), scale.y(420), {255, 255, 255, 100}, &textCache);
+	           scale.x(15), scale.y(5), {255, 0, 0, 100}, &textCache);
+
+	// Aeg tekst - centered at bottom
+	renderTextCentered(renderer, getFont(fontname, scale.fontSize(50)), aeg_tekst,
+	           windowCenterX, scale.y(420), {255, 255, 255, 100}, &textCache);
+
+	// Skoor tekst - top right
 	renderText(renderer, getFont(fontname, scale.fontSize(50)), skoor_tekst,
-	           scale.x(450), scale.y(0), {255, 255, 255, 100}, &textCache);
-	
+	           scale.windowWidth - scale.x(180), scale.y(5), {255, 255, 255, 100}, &textCache);
+
 	// Full screen overlay scales with window
 	renderSquare(renderer, 0, 0, scale.windowWidth*50, 255, 0, 0, whole_scene_opacity);
-	renderText(renderer, getFont(fontname, scale.fontSize(100)), skoor_lõpp_tekst,
-	           scale.x(60), scale.y(160), {255, 255, 255, 255}, &textCache);
+
+	// Skoor lõpp - centered
+	renderTextCentered(renderer, getFont(fontname, scale.fontSize(100)), skoor_lõpp_tekst,
+	           windowCenterX, scale.y(160), {255, 255, 255, 255}, &textCache);
 
 	if (stardi_ekraan && mäng_läbi) {
 		renderSquare(renderer, 0, 0, scale.windowWidth*50, 0, 0, 20, 1.0f);
-		renderText(renderer, getFont(fontname, scale.fontSize(100)), "Sõna mäng",
-			   scale.x(100), scale.y(160), {255, 255, 255, 255}, &textCache);
+		// Title - centered
+		renderTextCentered(renderer, getFont(fontname, scale.fontSize(100)), "Sõna mäng",
+			   windowCenterX, scale.y(160), {255, 255, 255, 255}, &textCache);
 	}
 
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -546,7 +626,7 @@ int main() {
 			if (event.type == SDL_EVENT_QUIT) {
 				running = false;
 			}
-			if (event.key.key == SDLK_RETURN && mäng_läbi && whole_scene_opacity > 0.90f) {
+			if (event.key.key == SDLK_RETURN && mäng_läbi && (whole_scene_opacity > 0.90f || stardi_ekraan)) {
 				uus_mäng();
 				std::cout << "uus mäng" << std::endl;
 			}
